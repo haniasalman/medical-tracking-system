@@ -30,7 +30,8 @@ import { db } from "../../backend/firebaseConfigure";
 
 function Profile() {
   const [patientData, setPatientData] = useState(null);
-  const [appointments, setAppointments] = useState([]); // Placeholder for appointments
+  const [prescriptions, setPrescriptions] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const fetchPatients = async () => {
     try {
@@ -47,11 +48,29 @@ function Profile() {
     }
   };
 
+  const fetchPrescriptions = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, "prescriptions"));
+      const prescriptionsList = [];
+      querySnapshot.forEach((doc) => {
+        prescriptionsList.push(doc.data());
+      });
+      setPrescriptions(prescriptionsList);
+    } catch (error) {
+      console.error("Error fetching prescriptions: ", error);
+    }
+  };
+
   useEffect(() => {
-    fetchPatients();
+    const fetchData = async () => {
+      await Promise.all([fetchPatients(), fetchPrescriptions()]);
+      setLoading(false);
+    };
+
+    fetchData();
   }, []);
 
-  if (!patientData) {
+  if (loading) {
     return <CircularProgress />;
   }
 
@@ -84,10 +103,7 @@ function Profile() {
       {/* Medical History Section */}
       <Grid item xs={12} md={6}>
         <Card>
-          <CardHeader
-            title="Medical History"
-            avatar={<HistoryEdu fontSize="large" />}
-          />
+          <CardHeader title="Medical History" avatar={<HistoryEdu fontSize="large" />} />
           <CardContent>
             <Typography variant="h6">Medications</Typography>
             <TableContainer component={Paper} style={{ marginTop: 10 }}>
@@ -122,7 +138,7 @@ function Profile() {
             ))}
 
             <Typography variant="h6" style={{ marginTop: 20 }}>
-              Past Medical History(PMH)
+              Past Medical History (PMH)
             </Typography>
             <Divider />
             {patientData.medicalHistory.postMedicalHistory?.map((condition, index) => (
@@ -134,13 +150,47 @@ function Profile() {
         </Card>
       </Grid>
 
+      {/* Prescriptions Section */}
+      <Grid item xs={12}>
+        <Card>
+          <CardHeader title="Prescriptions" avatar={<Medication fontSize="large" />} />
+          <CardContent>
+            <TableContainer component={Paper} style={{ marginTop: 10 }}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Medication</TableCell>
+                    <TableCell>Dosage</TableCell>
+                    <TableCell>Frequency</TableCell>
+                    <TableCell>Start Date</TableCell>
+                    <TableCell>End Date</TableCell>
+                    <TableCell>Instructions</TableCell>
+                    <TableCell>Doctor</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {prescriptions.map((prescription, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{prescription.medication}</TableCell>
+                      <TableCell>{prescription.dosage}</TableCell>
+                      <TableCell>{prescription.frequency}</TableCell>
+                      <TableCell>{new Date(prescription.startDate).toLocaleDateString()}</TableCell>
+                      <TableCell>{new Date(prescription.endDate).toLocaleDateString()}</TableCell>
+                      <TableCell>{prescription.instructions}</TableCell>
+                      <TableCell>{prescription.doctor}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </CardContent>
+        </Card>
+      </Grid>
+
       {/* Appointments Section */}
       <Grid item xs={12}>
         <Card>
-          <CardHeader
-            title="Appointments"
-            avatar={<Event fontSize="large" />}
-          />
+          <CardHeader title="Appointments" avatar={<Event fontSize="large" />} />
           <CardContent>
             <Typography variant="body1" style={{ marginTop: 10 }}>
               No appointments available at the moment.
