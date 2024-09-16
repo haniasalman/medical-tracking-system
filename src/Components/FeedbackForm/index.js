@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect  } from 'react';
 import { TextField, Button, Typography, Grid, Snackbar, Alert, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
+import { collection, addDoc, getDocs } from 'firebase/firestore';
+import { db } from '../../backend/firebaseConfigure'; // Import Firestore instance
 
 function FeedbackForm() {
   const [feedback, setFeedback] = useState({
@@ -11,6 +13,27 @@ function FeedbackForm() {
 
   const [errors, setErrors] = useState({});
   const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+  const [patientId, setPatientId] = useState(null);
+
+  // Fetch the patient profile to get the patientId (doc.id)
+  const fetchPatientId = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, 'patients'));
+      if (!querySnapshot.empty) {
+        const patientDoc = querySnapshot.docs[0]; // Assuming we're using the first patient for the demo
+        console.log('patientdoc id', patientDoc.id)
+        setPatientId(patientDoc.id); // Store patientId
+      }
+    } catch (error) {
+      console.error('Error fetching patient: ', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchPatientId(); // Fetch patient ID when the component mounts
+  }, []);
 
   const validate = () => {
     let tempErrors = {};
@@ -21,18 +44,32 @@ function FeedbackForm() {
     return Object.values(tempErrors).every((error) => error === '');
   };
 
-  const handleSubmit = () => {
-    if (validate()) {
-      console.log('Feedback submitted:', feedback);
-      setOpenSnackbar(true); // Open success message
-      // Reset form after submission
-      setFeedback({
-        medication: '',
-        intakeStatus: '',
-        dosage: '',
-        sideEffects: ''
-      });
-      setErrors({});
+  const handleSubmit = async () => {
+    if (validate() && patientId) {
+      try {
+        // Save feedback to Firestore
+        await addDoc(collection(db, 'feedbacks'), {
+          ...feedback,
+          patientId, // Associate feedback with the patientId
+        });
+        setSnackbarMessage('Feedback submitted successfully!');
+        setSnackbarSeverity('success');
+        setOpenSnackbar(true);
+
+        // Reset form after submission
+        setFeedback({
+          medication: '',
+          intakeStatus: '',
+          dosage: '',
+          sideEffects: ''
+        });
+        setErrors({});
+      } catch (error) {
+        console.error('Error submitting feedback: ', error);
+        setSnackbarMessage('Error submitting feedback. Please try again.');
+        setSnackbarSeverity('error');
+        setOpenSnackbar(true);
+      }
     }
   };
 
@@ -122,8 +159,8 @@ function FeedbackForm() {
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <Alert onClose={handleSnackbarClose} severity="success" sx={{ width: '100%' }}>
-          Feedback submitted successfully!
+        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
         </Alert>
       </Snackbar>
     </Grid>

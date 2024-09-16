@@ -72,7 +72,7 @@ function App() {
           </Box>
 
           {/* Footer */}
-          <footer style={{ textAlign: 'center', padding: '10px 0', marginTop: 'auto' }}>
+          <footer style={{ textAlign: 'center', padding: '10px 0', marginTop: '200px' }}>
             <Typography variant="caption">© 2024 Medical Tracking System. All rights reserved.</Typography>
           </footer>
         </Box>

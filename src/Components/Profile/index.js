@@ -1,110 +1,152 @@
-import React from 'react';
-import { Grid, Typography, Card, CardContent, CardHeader, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip, Alert, AlertTitle } from '@mui/material';
-import { MedicalServices, Warning, Medication, HistoryEdu } from '@mui/icons-material';
+import React, { useEffect, useState } from "react";
+import {
+  Grid,
+  Typography,
+  Card,
+  CardContent,
+  CardHeader,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  CircularProgress,
+  Avatar,
+  Divider,
+} from "@mui/material";
+import {
+  MedicalServices,
+  Medication,
+  Home,
+  Phone,
+  Email,
+  HistoryEdu,
+  Event,
+} from "@mui/icons-material";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../../backend/firebaseConfigure";
 
 function Profile() {
-  const patientData = {
-    name: 'John Doe',
-    age: 45,
-    medicalHistory: ['Diabetes', 'Hypertension'],
-    allergies: ['Penicillin', 'Peanuts'],
-    prescriptions: [
-      { drug: 'Metformin', dosage: '500 mg', frequency: 'Twice a day', nextDose: '9:00 AM' },
-      { drug: 'Lisinopril', dosage: '10 mg', frequency: 'Once a day', nextDose: '7:00 PM' }
-    ]
+  const [patientData, setPatientData] = useState(null);
+  const [appointments, setAppointments] = useState([]); // Placeholder for appointments
+
+  const fetchPatients = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, "patients"));
+      const patients = [];
+      querySnapshot.forEach((doc) => {
+        patients.push(doc.data());
+      });
+      if (patients.length > 0) {
+        setPatientData(patients[0]); // Use first patient data for demo
+      }
+    } catch (error) {
+      console.error("Error fetching patients: ", error);
+    }
   };
 
-  const medicationAlerts = [
-    { type: 'schedule', message: 'Next dose of Metformin is due at 9:00 AM' },
-    { type: 'schedule', message: 'Next dose of Lisinopril is due at 7:00 PM' },
-    { type: 'refill', message: 'Metformin refill required in 5 days' },
-  ];
+  useEffect(() => {
+    fetchPatients();
+  }, []);
+
+  if (!patientData) {
+    return <CircularProgress />;
+  }
 
   return (
-    <Grid container spacing={3} style={{ padding: '20px' }}>
-      {/* Patient Profile Section */}
+    <Grid container spacing={3} style={{ padding: "20px" }}>
+      {/* Patient Information Section */}
       <Grid item xs={12} md={6}>
         <Card>
           <CardHeader
-            title="Patient Profile"
-            subheader={`${patientData.name}, Age: ${patientData.age}`}
-            avatar={<MedicalServices fontSize="large" />}
+            avatar={<Avatar sx={{ bgcolor: "primary.main" }}>{patientData.name.charAt(0)}</Avatar>}
+            title={patientData.name}
+            subheader={`Age: ${patientData.age}, Gender: ${patientData.gender}`}
           />
           <CardContent>
-            <Typography variant="h6">Medical History</Typography>
-            {patientData.medicalHistory.map((condition, index) => (
-              <Chip
-                key={index}
-                label={condition}
-                icon={<HistoryEdu />}
-                color="primary"
-                style={{ marginRight: 5, marginBottom: 5 }}
-              />
-            ))}
-            <Typography variant="h6" style={{ marginTop: 15 }}>Allergies</Typography>
-            {patientData.allergies.map((allergy, index) => (
-              <Chip
-                key={index}
-                label={allergy}
-                icon={<Warning />}
-                color="secondary"
-                style={{ marginRight: 5, marginBottom: 5 }}
-              />
-            ))}
+            <Typography variant="h6">Contact Information</Typography>
+            <Divider />
+            <Typography variant="body1" style={{ marginTop: 10 }}>
+              <Home fontSize="small" /> {patientData.address}
+            </Typography>
+            <Typography variant="body1" style={{ marginTop: 5 }}>
+              <Phone fontSize="small" /> {patientData.phone}
+            </Typography>
+            <Typography variant="body1" style={{ marginTop: 5 }}>
+              <Email fontSize="small" /> {patientData.email}
+            </Typography>
           </CardContent>
         </Card>
       </Grid>
 
-      {/* Prescription Section */}
+      {/* Medical History Section */}
       <Grid item xs={12} md={6}>
         <Card>
           <CardHeader
-            title="Current Prescriptions"
-            avatar={<Medication fontSize="large" />}
+            title="Medical History"
+            avatar={<HistoryEdu fontSize="large" />}
           />
           <CardContent>
-            <TableContainer component={Paper}>
+            <Typography variant="h6">Medications</Typography>
+            <TableContainer component={Paper} style={{ marginTop: 10 }}>
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Drug</TableCell>
+                    <TableCell>Medication</TableCell>
                     <TableCell>Dosage</TableCell>
                     <TableCell>Frequency</TableCell>
-                    <TableCell>Next Dose</TableCell>
+                    <TableCell>Status</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {patientData.prescriptions.map((prescription, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{prescription.drug}</TableCell>
-                      <TableCell>{prescription.dosage}</TableCell>
-                      <TableCell>{prescription.frequency}</TableCell>
-                      <TableCell>{prescription.nextDose}</TableCell>
-                    </TableRow>
-                  ))}
+                  <TableRow>
+                    <TableCell>{patientData.medicalHistory.Medications.medName}</TableCell>
+                    <TableCell>{patientData.medicalHistory.Medications.dosage}</TableCell>
+                    <TableCell>{patientData.medicalHistory.Medications.frequency}</TableCell>
+                    <TableCell>{patientData.medicalHistory.Medications.status}</TableCell>
+                  </TableRow>
                 </TableBody>
               </Table>
             </TableContainer>
+
+            <Typography variant="h6" style={{ marginTop: 20 }}>
+              Allergies
+            </Typography>
+            <Divider />
+            {patientData.medicalHistory.allergies?.map((allergy, index) => (
+              <Typography key={index} variant="body1" style={{ marginTop: 10 }}>
+                {allergy}
+              </Typography>
+            ))}
+
+            <Typography variant="h6" style={{ marginTop: 20 }}>
+              Past Medical History(PMH)
+            </Typography>
+            <Divider />
+            {patientData.medicalHistory.postMedicalHistory?.map((condition, index) => (
+              <Typography key={index} variant="body1" style={{ marginTop: 10 }}>
+                {condition}
+              </Typography>
+            ))}
           </CardContent>
         </Card>
       </Grid>
 
-      {/* Alerts and Notifications Section */}
+      {/* Appointments Section */}
       <Grid item xs={12}>
-        <Typography variant="h6" gutterBottom>
-          Alerts & Notifications
-        </Typography>
-        {medicationAlerts.map((alert, index) => (
-          <Alert
-            key={index}
-            severity={alert.type === 'schedule' ? 'info' : 'warning'}
-            icon={alert.type === 'schedule' ? <Medication /> : <Warning />}
-            style={{ marginBottom: 10 }}
-          >
-            <AlertTitle>{alert.type === 'schedule' ? 'Medication Schedule' : 'Refill Alert'}</AlertTitle>
-            {alert.message}
-          </Alert>
-        ))}
+        <Card>
+          <CardHeader
+            title="Appointments"
+            avatar={<Event fontSize="large" />}
+          />
+          <CardContent>
+            <Typography variant="body1" style={{ marginTop: 10 }}>
+              No appointments available at the moment.
+            </Typography>
+          </CardContent>
+        </Card>
       </Grid>
     </Grid>
   );
