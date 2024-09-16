@@ -31,6 +31,7 @@ import { db } from "../../backend/firebaseConfigure";
 function Profile() {
   const [patientData, setPatientData] = useState(null);
   const [prescriptions, setPrescriptions] = useState([]);
+  const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchPatients = async () => {
@@ -38,10 +39,19 @@ function Profile() {
       const querySnapshot = await getDocs(collection(db, "patients"));
       const patients = [];
       querySnapshot.forEach((doc) => {
-        patients.push(doc.data());
+        patients.push({ id: doc.id, ...doc.data() });
       });
       if (patients.length > 0) {
-        setPatientData(patients[0]); // Use first patient data for demo
+        const patient = patients[0];
+        setPatientData(patient);
+         // Convert JSON object to array
+      const appointmentsObject = patient.appointments || {};
+      const appointmentsList = Object.keys(appointmentsObject).map(key => appointmentsObject[key]);
+      
+      console.log('Fetched appointments:', appointmentsList); // Debugging line
+        setAppointments(appointmentsList);
+
+        console.log(appointments)
       }
     } catch (error) {
       console.error("Error fetching patients: ", error);
@@ -73,6 +83,8 @@ function Profile() {
   if (loading) {
     return <CircularProgress />;
   }
+
+  console.log('outside', appointments.length)
 
   return (
     <Grid container spacing={3} style={{ padding: "20px" }}>
@@ -118,10 +130,10 @@ function Profile() {
                 </TableHead>
                 <TableBody>
                   <TableRow>
-                    <TableCell>{patientData.medicalHistory.Medications.medName}</TableCell>
-                    <TableCell>{patientData.medicalHistory.Medications.dosage}</TableCell>
-                    <TableCell>{patientData.medicalHistory.Medications.frequency}</TableCell>
-                    <TableCell>{patientData.medicalHistory.Medications.status}</TableCell>
+                    <TableCell>{patientData.medicalHistory?.Medications?.medName}</TableCell>
+                    <TableCell>{patientData.medicalHistory?.Medications?.dosage}</TableCell>
+                    <TableCell>{patientData.medicalHistory?.Medications?.frequency}</TableCell>
+                    <TableCell>{patientData.medicalHistory?.Medications?.status}</TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
@@ -131,7 +143,7 @@ function Profile() {
               Allergies
             </Typography>
             <Divider />
-            {patientData.medicalHistory.allergies?.map((allergy, index) => (
+            {patientData.medicalHistory?.allergies?.map((allergy, index) => (
               <Typography key={index} variant="body1" style={{ marginTop: 10 }}>
                 {allergy}
               </Typography>
@@ -141,7 +153,7 @@ function Profile() {
               Past Medical History (PMH)
             </Typography>
             <Divider />
-            {patientData.medicalHistory.postMedicalHistory?.map((condition, index) => (
+            {patientData.medicalHistory?.postMedicalHistory?.map((condition, index) => (
               <Typography key={index} variant="body1" style={{ marginTop: 10 }}>
                 {condition}
               </Typography>
@@ -192,9 +204,32 @@ function Profile() {
         <Card>
           <CardHeader title="Appointments" avatar={<Event fontSize="large" />} />
           <CardContent>
-            <Typography variant="body1" style={{ marginTop: 10 }}>
-              No appointments available at the moment.
-            </Typography>
+            <TableContainer component={Paper} style={{ marginTop: 10 }}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Appointment Date</TableCell>
+                    <TableCell>Doctor</TableCell>
+                    <TableCell>Type</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {appointments.length > 0 ? (
+                    appointments.map((appointment, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{new Date(appointment.appointmentDate.toDate()).toLocaleString()}</TableCell>
+                        <TableCell>{appointment.doctor}</TableCell>
+                        <TableCell>{appointment.type}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={3}>No appointments available at the moment.</TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
           </CardContent>
         </Card>
       </Grid>
