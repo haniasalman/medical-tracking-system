@@ -32,42 +32,65 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   // Fetch prescription data from Firestore (for future prescriptions)
-  // const fetchPrescriptions = async () => {
-  //   try {
-  //     const today = dayjs().toDate(); // Today's date
-  //     const prescriptionsSnapshot = await getDocs(
-  //       query(collection(db, "prescriptions"), where("endDate", ">=", today))
-  //     );
-  //     const prescriptions = prescriptionsSnapshot.docs.map((doc) => ({
-  //       id: doc.id,
-  //       ...doc.data(),
-  //     }));
-  //     console.log("Fetched prescriptions: ", prescriptions);
-  //     return prescriptions;
-  //   } catch (error) {
-  //     console.error("Error fetching prescriptions:", error);
-  //   }
+  // Helper function to convert date strings to JavaScript Date objects
+  const parseDate = (dateString) => dayjs(dateString, "M/D/YYYY").toDate();
+
+  const fetchPrescriptions = async () => {
+    try {
+      const today = dayjs().startOf("day").toDate(); // Start of today
+
+      // Fetch all documents
+      const prescriptionsSnapshot = await getDocs(
+        collection(db, "prescriptions")
+      );
+
+      // Filter documents locally
+      const prescriptions = prescriptionsSnapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        .filter((prescription) => {
+          const startDate = parseDate(prescription.startDate);
+          const endDate = parseDate(prescription.endDate);
+          return startDate <= today && endDate >= today;
+        });
+
+      console.log("Fetched prescriptions: ", prescriptions);
+      return prescriptions;
+    } catch (error) {
+      console.error("Error fetching prescriptions:", error);
+    }
+  };
+
+  // Convert Firebase Timestamp to formatted date
+  // const formatTimestamp = (timestamp) => {
+  //   // Assuming timestamp is a Firestore Timestamp object
+  //   const date = timestamp.toDate(); // Convert to JavaScript Date object
+  //   return dayjs(date).format("YYYY-MM-DD HH:mm:ss"); // Format as needed
   // };
 
   // Convert Firebase Timestamp to formatted date
-const formatTimestamp = (timestamp) => {
-  // Assuming timestamp is a Firestore Timestamp object
-  const date = timestamp.toDate(); // Convert to JavaScript Date object
-  return dayjs(date).format("YYYY-MM-DD HH:mm:ss"); // Format as needed
-};
+  const formatTimestamp = (timestamp) => {
+    if (timestamp) {
+      const date = timestamp.toDate(); // Convert to JavaScript Date object
+      return dayjs(date).format("YYYY-MM-DD HH:mm:ss"); // Format as needed
+    }
+    return "Unknown Date"; // Default value if timestamp is undefined
+  };
 
   // Fetch upcoming appointments from Firestore (for future appointments)
   const fetchAppointments = async () => {
     try {
       const today = dayjs().toDate(); // Today's date
       const patientsSnapshot = await getDocs(collection(db, "patients"));
-  
+
       const upcomingAppointments = [];
-      
+
       patientsSnapshot.docs.forEach((doc) => {
         const patientData = doc.data();
         const appointments = patientData.appointments || [];
-        
+
         // Filter appointments that are scheduled after today
         appointments.forEach((appointment) => {
           if (dayjs(appointment.appointmentDate.toDate()).isAfter(today)) {
@@ -78,7 +101,7 @@ const formatTimestamp = (timestamp) => {
           }
         });
       });
-  
+
       console.log("Fetched Appointments: ", upcomingAppointments);
       return upcomingAppointments;
     } catch (error) {
@@ -87,43 +110,45 @@ const formatTimestamp = (timestamp) => {
   };
 
   // Reminder generation algorithm based on prescription data
-  const generateReminders = ( appointments) => {
+  const generateReminders = (prescriptions, appointments) => {
     const reminders = [];
 
-    // // Generate medication reminders
-    // prescriptions.forEach((prescription) => {
-    //   const { medication, startDate, endDate, frequency } = prescription;
-    //   let frequencyHours = 0;
+    // Generate medication reminders
+    prescriptions.forEach((prescription) => {
+      const { medication, startDate, endDate, frequency } = prescription;
+      // let frequencyHours = 0;
 
-    //   if (frequency === "Twice a day") frequencyHours = 12;
-    //   if (frequency === "Once a day") frequencyHours = 24;
-    //   if (frequency === "Three times a day") frequencyHours = 8;
+      // if (frequency === "Twice a day") frequencyHours = 12;
+      // if (frequency === "Once a day") frequencyHours = 24;
+      // if (frequency === "Three times a day") frequencyHours = 8;
 
-    //   let nextReminder = dayjs(startDate);
-    //   const end = dayjs(endDate);
-    //   const now = dayjs();
+      // let nextReminder = dayjs(startDate);
+      // const end = dayjs(endDate);
+      // const now = dayjs();
 
-    //   while (nextReminder.isBefore(end) && nextReminder.isBefore(now)) {
-    //     nextReminder = nextReminder.add(frequencyHours, "hour");
-    //   }
+      // while (nextReminder.isBefore(end) && nextReminder.isBefore(now)) {
+      //   nextReminder = nextReminder.add(frequencyHours, "hour");
+      // }
 
-    //   if (nextReminder.isBefore(end)) {
-    //     reminders.push({
-    //       title: "Medication Reminder",
-    //       message: `It's time to take your medication: ${medication}`,
-    //       reminderTime: nextReminder.format("YYYY-MM-DD HH:mm:ss"),
-    //     });
-    //   }
-    // });
+      // if (nextReminder.isBefore(end)) {
+      reminders.push({
+        title: "Medication Reminder",
+        message: `It's time to take your medication: ${medication}`,
+      });
+      // }
+    });
 
     // Generate appointment reminders
     appointments.forEach((appointment) => {
       const { appointmentDate, doctor } = appointment;
-      const reminderTime = dayjs(appointmentDate).format("YYYY-MM-DD HH:mm:ss");
+      const formattedDate = formatTimestamp(appointmentDate);
+      const reminderTime = dayjs(appointmentDate?.toDate()).format(
+        "YYYY-MM-DD HH:mm:ss"
+      );
 
       reminders.push({
         title: "Appointment Reminder",
-        message: `You have an upcoming appointment with ${doctor} on ${formatTimestamp(appointmentDate)}`,
+        message: `You have an upcoming appointment with ${doctor} on ${formattedDate}`,
         reminderTime,
       });
     });
@@ -133,18 +158,18 @@ const formatTimestamp = (timestamp) => {
   };
 
   // Debounce the reminder generation to avoid unnecessary calls
-  const debouncedGenerateReminders = debounce((appointments) => {
-    const reminders = generateReminders( appointments);
-    console.log('reminders',reminders)
+  const debouncedGenerateReminders = debounce((prescriptions, appointments) => {
+    const reminders = generateReminders(prescriptions, appointments);
+    console.log("reminders", reminders);
     setReminders(reminders); // Set the reminders locally, not saving them to Firestore
   }, 1000); // 1-second delay
 
   // Fetch prescriptions and appointments, then generate reminders
   const fetchAndSetReminders = async () => {
     try {
-      // const prescriptions = await fetchPrescriptions();
+      const prescriptions = await fetchPrescriptions();
       const appointments = await fetchAppointments();
-      debouncedGenerateReminders(appointments);
+      debouncedGenerateReminders(prescriptions, appointments);
     } catch (error) {
       console.error("Error generating reminders:", error);
     }
@@ -153,7 +178,10 @@ const formatTimestamp = (timestamp) => {
   useEffect(() => {
     const interval = setInterval(() => {
       fetchAndSetReminders();
-    }, 60000); // Every minute for testing
+    }, 24 * 60 * 60 * 1000); // Every 24 hours
+
+    // Run immediately on mount to check reminders
+    fetchAndSetReminders();
 
     return () => clearInterval(interval); // Clear interval on unmount
   }, []);
@@ -187,9 +215,6 @@ const formatTimestamp = (timestamp) => {
             <ListItem button component={Link} to="/prescriptions">
               <ListItemText primary="Prescriptions" />
             </ListItem>
-            <ListItem button component={Link} to="/reminders">
-              <ListItemText primary="Reminders" />
-            </ListItem>
             <ListItem button component={Link} to="/feedback">
               <ListItemText primary="Feedback" />
             </ListItem>
@@ -217,7 +242,16 @@ const formatTimestamp = (timestamp) => {
             sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
           >
             <Toolbar>
-              <Typography variant="h6" noWrap>
+              <Typography
+                variant="h6"
+                noWrap
+                component={Link}
+                to="/"
+                style={{
+                  textDecoration: "none",
+                  color: "white",
+                }}
+              >
                 Medical Tracking System
               </Typography>
               <IconButton color="inherit" onClick={handleReminderClick}>
@@ -232,17 +266,24 @@ const formatTimestamp = (timestamp) => {
               >
                 {reminders.length > 0 ? (
                   reminders.map((reminder, index) => (
-                    <MenuItem key={index} sx={{ whiteSpace: 'normal', display: 'block', maxWidth: '250px' }}>
-        <Typography variant="subtitle1" fontWeight="bold">
-          {reminder.title}
-        </Typography>
-        <Typography variant="body2">
-          {reminder.message}
-        </Typography>
-        {/* <Typography variant="caption" color="textSecondary">
+                    <MenuItem
+                      key={index}
+                      sx={{
+                        whiteSpace: "normal",
+                        display: "block",
+                        maxWidth: "250px",
+                      }}
+                    >
+                      <Typography variant="subtitle1" fontWeight="bold">
+                        {reminder.title}
+                      </Typography>
+                      <Typography variant="body2">
+                        {reminder.message}
+                      </Typography>
+                      {/* <Typography variant="caption" color="textSecondary">
           at {reminder.reminderTime}
         </Typography> */}
-      </MenuItem>
+                    </MenuItem>
                   ))
                 ) : (
                   <MenuItem>No reminders available</MenuItem>
@@ -287,9 +328,12 @@ const formatTimestamp = (timestamp) => {
 const Home = () => (
   <Grid container spacing={2}>
     <Grid item xs={12}>
-      <Typography variant="h4">Welcome to the Medical Tracking System</Typography>
+      <Typography variant="h4">
+        Welcome to the Medical Tracking System
+      </Typography>
       <Typography variant="body1">
-        Navigate through the sidebar to enter prescriptions, provide feedback, and view patient profiles.
+        Navigate through the sidebar to enter prescriptions, provide feedback,
+        and view patient profiles.
       </Typography>
     </Grid>
   </Grid>
