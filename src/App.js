@@ -200,13 +200,13 @@ function App() {
         >
           <Toolbar />
           <List>
-            <ListItem button component={Link} to="/prescriptions">
+            <ListItem component={Link} to="/prescriptions" button>
               <ListItemText primary="Prescriptions" />
             </ListItem>
-            <ListItem button component={Link} to="/feedback">
+            <ListItem component={Link} to="/feedback" button>
               <ListItemText primary="Feedback" />
             </ListItem>
-            <ListItem button component={Link} to="/profiles">
+            <ListItem component={Link} to="/profiles" button>
               <ListItemText primary="Profiles" />
             </ListItem>
           </List>
