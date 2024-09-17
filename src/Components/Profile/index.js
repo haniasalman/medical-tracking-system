@@ -44,14 +44,10 @@ function Profile() {
       if (patients.length > 0) {
         const patient = patients[0];
         setPatientData(patient);
-         // Convert JSON object to array
-      const appointmentsList = patient.appointments || {};
-      // const appointmentsList = Object.keys(appointmentsObject).map(key => appointmentsObject[key]);
-      
-      console.log('Fetched appointments:', appointmentsList); // Debugging line
+        // Convert JSON object to array
+        const appointmentsList = patient.appointments || {};
+        // const appointmentsList = Object.keys(appointmentsObject).map(key => appointmentsObject[key]);
         setAppointments(appointmentsList);
-
-        console.log(appointments)
       }
     } catch (error) {
       console.error("Error fetching patients: ", error);
@@ -90,7 +86,11 @@ function Profile() {
       <Grid item xs={12} md={6}>
         <Card>
           <CardHeader
-            avatar={<Avatar sx={{ bgcolor: "primary.main" }}>{patientData.name.charAt(0)}</Avatar>}
+            avatar={
+              <Avatar sx={{ bgcolor: "primary.main" }}>
+                {patientData.name.charAt(0)}
+              </Avatar>
+            }
             title={patientData.name}
             subheader={`Age: ${patientData.age}, Gender: ${patientData.gender}`}
           />
@@ -113,7 +113,10 @@ function Profile() {
       {/* Medical History Section */}
       <Grid item xs={12} md={6}>
         <Card>
-          <CardHeader title="Medical History" avatar={<HistoryEdu fontSize="large" />} />
+          <CardHeader
+            title="Medical History"
+            avatar={<HistoryEdu fontSize="large" />}
+          />
           <CardContent>
             <Typography variant="h6">Medications</Typography>
             <TableContainer component={Paper} style={{ marginTop: 10 }}>
@@ -128,10 +131,18 @@ function Profile() {
                 </TableHead>
                 <TableBody>
                   <TableRow>
-                    <TableCell>{patientData.medicalHistory?.Medications?.medName}</TableCell>
-                    <TableCell>{patientData.medicalHistory?.Medications?.dosage}</TableCell>
-                    <TableCell>{patientData.medicalHistory?.Medications?.frequency}</TableCell>
-                    <TableCell>{patientData.medicalHistory?.Medications?.status}</TableCell>
+                    <TableCell>
+                      {patientData.medicalHistory?.Medications?.medName}
+                    </TableCell>
+                    <TableCell>
+                      {patientData.medicalHistory?.Medications?.dosage}
+                    </TableCell>
+                    <TableCell>
+                      {patientData.medicalHistory?.Medications?.frequency}
+                    </TableCell>
+                    <TableCell>
+                      {patientData.medicalHistory?.Medications?.status}
+                    </TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
@@ -151,11 +162,17 @@ function Profile() {
               Past Medical History (PMH)
             </Typography>
             <Divider />
-            {patientData.medicalHistory?.postMedicalHistory?.map((condition, index) => (
-              <Typography key={index} variant="body1" style={{ marginTop: 10 }}>
-                {condition}
-              </Typography>
-            ))}
+            {patientData.medicalHistory?.postMedicalHistory?.map(
+              (condition, index) => (
+                <Typography
+                  key={index}
+                  variant="body1"
+                  style={{ marginTop: 10 }}
+                >
+                  {condition}
+                </Typography>
+              )
+            )}
           </CardContent>
         </Card>
       </Grid>
@@ -163,7 +180,10 @@ function Profile() {
       {/* Prescriptions Section */}
       <Grid item xs={12}>
         <Card>
-          <CardHeader title="Prescriptions" avatar={<Medication fontSize="large" />} />
+          <CardHeader
+            title="Prescriptions"
+            avatar={<Medication fontSize="large" />}
+          />
           <CardContent>
             <TableContainer component={Paper} style={{ marginTop: 10 }}>
               <Table>
@@ -184,8 +204,12 @@ function Profile() {
                       <TableCell>{prescription.medication}</TableCell>
                       <TableCell>{prescription.dosage}</TableCell>
                       <TableCell>{prescription.frequency}</TableCell>
-                      <TableCell>{new Date(prescription.startDate).toLocaleDateString()}</TableCell>
-                      <TableCell>{new Date(prescription.endDate).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        {new Date(prescription.startDate).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        {new Date(prescription.endDate).toLocaleDateString()}
+                      </TableCell>
                       <TableCell>{prescription.instructions}</TableCell>
                       <TableCell>{prescription.doctor}</TableCell>
                     </TableRow>
@@ -200,7 +224,10 @@ function Profile() {
       {/* Appointments Section */}
       <Grid item xs={12}>
         <Card>
-          <CardHeader title="Appointments" avatar={<Event fontSize="large" />} />
+          <CardHeader
+            title="Appointments"
+            avatar={<Event fontSize="large" />}
+          />
           <CardContent>
             <TableContainer component={Paper} style={{ marginTop: 10 }}>
               <Table>
@@ -215,14 +242,20 @@ function Profile() {
                   {appointments.length > 0 ? (
                     appointments.map((appointment, index) => (
                       <TableRow key={index}>
-                        <TableCell>{new Date(appointment.appointmentDate.toDate()).toLocaleString()}</TableCell>
+                        <TableCell>
+                          {new Date(
+                            appointment.appointmentDate.toDate()
+                          ).toLocaleString()}
+                        </TableCell>
                         <TableCell>{appointment.doctor}</TableCell>
                         <TableCell>{appointment.type}</TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={3}>No appointments available at the moment.</TableCell>
+                      <TableCell colSpan={3}>
+                        No appointments available at the moment.
+                      </TableCell>
                     </TableRow>
                   )}
                 </TableBody>

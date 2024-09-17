@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense, useCallback } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import {
   AppBar,
   Toolbar,
@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import NotificationsIcon from "@mui/icons-material/Notifications";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "./backend/firebaseConfigure";
 import dayjs from "dayjs";
 import { debounce } from "lodash";
@@ -29,12 +29,11 @@ const Profile = lazy(() => import("./Components/Profile"));
 function App() {
   const [reminders, setReminders] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
-  const [loading, setLoading] = useState(true);
 
-  // Fetch prescription data from Firestore (for future prescriptions)
   // Helper function to convert date strings to JavaScript Date objects
   const parseDate = (dateString) => dayjs(dateString, "M/D/YYYY").toDate();
 
+  // Fetch prescription data from Firestore (for future prescriptions)
   const fetchPrescriptions = async () => {
     try {
       const today = dayjs().startOf("day").toDate(); // Start of today
@@ -56,19 +55,11 @@ function App() {
           return startDate <= today && endDate >= today;
         });
 
-      console.log("Fetched prescriptions: ", prescriptions);
       return prescriptions;
     } catch (error) {
       console.error("Error fetching prescriptions:", error);
     }
   };
-
-  // Convert Firebase Timestamp to formatted date
-  // const formatTimestamp = (timestamp) => {
-  //   // Assuming timestamp is a Firestore Timestamp object
-  //   const date = timestamp.toDate(); // Convert to JavaScript Date object
-  //   return dayjs(date).format("YYYY-MM-DD HH:mm:ss"); // Format as needed
-  // };
 
   // Convert Firebase Timestamp to formatted date
   const formatTimestamp = (timestamp) => {
@@ -102,7 +93,6 @@ function App() {
         });
       });
 
-      console.log("Fetched Appointments: ", upcomingAppointments);
       return upcomingAppointments;
     } catch (error) {
       console.error("Error fetching appointments:", error);
@@ -153,14 +143,12 @@ function App() {
       });
     });
 
-    console.log("Generated Reminders: ", reminders);
     return reminders;
   };
 
   // Debounce the reminder generation to avoid unnecessary calls
   const debouncedGenerateReminders = debounce((prescriptions, appointments) => {
     const reminders = generateReminders(prescriptions, appointments);
-    console.log("reminders", reminders);
     setReminders(reminders); // Set the reminders locally, not saving them to Firestore
   }, 1000); // 1-second delay
 
