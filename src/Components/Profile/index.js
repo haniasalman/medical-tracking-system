@@ -45,8 +45,8 @@ function Profile() {
         const patient = patients[0];
         setPatientData(patient);
          // Convert JSON object to array
-      const appointmentsObject = patient.appointments || {};
-      const appointmentsList = Object.keys(appointmentsObject).map(key => appointmentsObject[key]);
+      const appointmentsList = patient.appointments || {};
+      // const appointmentsList = Object.keys(appointmentsObject).map(key => appointmentsObject[key]);
       
       console.log('Fetched appointments:', appointmentsList); // Debugging line
         setAppointments(appointmentsList);
@@ -83,8 +83,6 @@ function Profile() {
   if (loading) {
     return <CircularProgress />;
   }
-
-  console.log('outside', appointments.length)
 
   return (
     <Grid container spacing={3} style={{ padding: "20px" }}>
